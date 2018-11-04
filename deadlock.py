@@ -7,12 +7,12 @@ def main():
     struct = makeStruct(procs)
     print("Initial struct: " + str(struct))
 
-
     while len(steps)-1 >= 0:
         struct = nextStep(struct, steps[0])
+        print("\n\nStructure at '"+str(steps[0])+"' : "+str(struct))
+        #print("Steps: "+str(steps)+"\n\n")
         steps.pop(0)
-        print("\n\nStructure: "+str(struct))
-        print("Steps: "+str(steps)+"\n\n")
+
     print("")
 
     undo()
@@ -49,44 +49,66 @@ def nextStep(currentStruct, stepToDo):
         4. deadlock check
     '''
     print("BEGIN NEXT")
-    newStruct = currentStruct
 
     if "request" in stepToDo: # pi asks for ri
         print("request")
         # edit the states
         pid = int(stepToDo[0:stepToDo.index(" requests")].replace("p",""))
         rid = int(stepToDo[stepToDo.index(" requests ")+len(" requests "):].replace("r",""))
-
-        #check if another process owns this resource
-        alreadyOwnedByAnother = False
-        for process in currentStruct:
-            print(currentStruct[process]["owned"])
-            if rid in currentStruct[process]["owned"] and pid != process:
-                # is the rid already owned, not by me
-                # add rid to pids request edge
-                newStruct[pid]["requested"].append(rid)
-                alreadyOwnedByAnother = True
-
-        if alreadyOwnedByAnother == False :
-            # the resource is NOT owned by another process sp we can own it
-            newStruct[pid]["owned"].append(rid)
+        newStruct = request(pid, rid, currentStruct);
 
         print("END NEXT REQUEST")
         return newStruct
-
 
     if "releases" in stepToDo: # pi lets go of ri
         print("releases")
         # edit the states
         pid = int(stepToDo[0:stepToDo.index(" releases")].replace("p",""))
         rid = int(stepToDo[stepToDo.index(" releases ")+len(" releases "):].replace("r",""))
+        newStruct = release(pid, rid, currentStruct)
 
-        if rid in currentStruct[pid]["owned"]:
-            # we own the process we want to releases
-            newStruct[pid]["owned"].remove(rid)
+        print("End release")
         return newStruct
 
-    print("END NEXT")
+def request(pid, rid, currentStruct):
+    #check if another process owns this resource
+    newStruct = currentStruct
+    alreadyOwnedByAnother = False
+    for process in newStruct:
+        if rid in newStruct[process]["owned"] and pid != process:
+            # is the rid already owned, not by me
+            # add rid to pids request edge
+            newStruct[pid]["requested"].append(rid) #mark that we want it
+            newStruct[process]["blocked"].append((pid, rid))
+            alreadyOwnedByAnother = True
+
+    if alreadyOwnedByAnother == False :
+        # the resource is NOT owned by another process sp we can own it
+        newStruct[pid]["owned"].append(rid)
+
+    return newStruct
+
+
+def release(pid, rid, currentStruct):
+    newStruct = currentStruct
+    if rid in newStruct[pid]["owned"]:
+        # we own the process we want to release
+        # check if any one was blokced on that who now gets to own that resource and if any other processes allso requested it after that then they are now blokced by who now owns it
+        newStruct[pid]["owned"].remove(rid) # i dont own it anymore
+        reqFirst = False
+        for tuple in newStruct[pid]["blocked"]:
+            if tuple[1] == rid and reqFirst == False:
+                newStruct = request(tuple[0], rid, newStruct)
+                newStruct[pid]["blocked"].remove(tuple)
+
+                reqFirst = True
+            elif tuple[1] == rid:
+                # the previous process was blocking more than one process on this resources
+                # so the new process who owns the resource will need to track blocking those
+                newStruct[tuple[0]]["blocked"].append(tuple)
+                newStruct[pid]["blocked"].remove(tuple)
+
+    return newStruct
 
 def undo():
     print("UNDO")
