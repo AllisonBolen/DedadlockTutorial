@@ -6,61 +6,59 @@ class deadlock(object):
         resources:
         steps:
     '''
-    def __init__(self):
+    def __init__(self, file):
         '''
         sets up the initial state of the deadlock tutorial
         '''
-        self.procs, self.recs, self.steps = self.readInputFile()
-        self.state = self.makeStruct(self.procs)
+        self.numProcs, self.numResc, self.steps = self.readInputFile(file)
+        self.state = self.makeStruct(self.numProcs)
+        self.procList = [(lambda x: x)(x) for x in range(0,self.numProcs)]
+        self.rescList = [(lambda x: x)(x) for x in range(self.numProcs, self.numResc+self.numProcs)]
+        self.rescMap = self.mapResources()
+
+    def mapResources(self):
+        info = {}
+        for item in range(0, self.numResc):
+            info[item] = self.rescList[item]
+        return info
 
     # getters
-    def makeNodeProcs(self):
+    def makeProcsLables(self):
         p = []
-        for item in range(0, self.procs):
+        for item in range(0, self.numProcs):
             p.append("P"+str(item))
         return p
 
-    def makeNodeRecs(self):
+    def makeRescLables(self):
         r = []
-        for item in range(0, self.recs):
+        for item in range(0, self.numResc):
             r.append("R"+str(item))
         return r
 
-    def getProcs(self):
-        return self.procs
-    def getRecs(self):
-        return self.recs
+    def getListProcs(self):
+        return self.procList
+
+    def getListResc(self):
+        return self.rescList
+
+    def getNumProcs(self):
+        return self.numProcs
+    def getNumResc(self):
+        return self.numResc
     def getSteps(self):
         return self.steps
     def getState(self):
         return self.state
 
-    def All():
-            #read in file data
-            procs, recs, steps = readInputFile()
-
-            struct = makeStruct(procs)
-            print("Initial struct: " + str(struct))
-
-            while len(steps)-1 >= 0:
-                struct = nextStep(struct, steps[0])
-                print("\n\nStructure at '"+str(steps[0])+"' : "+str(struct))
-                #print("Steps: "+str(steps)+"\n\n")
-                steps.pop(0)
-
-            print("")
-
-            undo()
-
-    def textForStep(self, procs, recs, step ):
-        initial = "There are " + str(procs) + " processes and "+recs+" resources in this system"\
+    def textForStep(self, numProcs, numResc, step ):
+        initial = "There are " + str(numProcs) + " processes and "+numResc+" resources in this system"\
                 " This system is going to teach you about deadlock"\
                 " There are four"
 
-    def makeStruct(self, procs):
+    def makeStruct(self, numProcs):
         '''
             how the gme knows who is requesting who
-            and who owns who and who is blocked
+            and who owns who and who is blocking
             we track this by a dictionary of preocesses as keys to three other
             dicts of "req" , "block", "own" which are all lists of resources
             structure:
@@ -71,8 +69,8 @@ class deadlock(object):
                 >
         '''
         structure = {}
-        for process in range(0, procs):
-            structure["p"+str(process)] = {"blocked": [], "owned": [], "requested": []}
+        for process in range(0, numProcs):
+            structure[process] = {"blocking": [], "owned": [], "requested": [], "waitingFor":[]}
         return structure
 
     def nextStep(self):
@@ -91,18 +89,20 @@ class deadlock(object):
         else:
             return "END GAME"
 
+
+
         if "request" in stepToDo: # pi asks for ri
             # edit the states
-            pid = stepToDo[0:stepToDo.index(" requests")]
-            rid = stepToDo[stepToDo.index(" requests ")+len(" requests "):]
+            pid = int(stepToDo[0:stepToDo.index(" requests")].replace("p",""))
+            rid = int(stepToDo[stepToDo.index(" requests ")+len(" requests "):].replace("r",""))
             self.state = self.request(pid, rid, self.state);
 
             return stepToDo
 
         if "releases" in stepToDo: # pi lets go of ri
             # edit the states
-            pid = stepToDo[0:stepToDo.index(" releases")]
-            rid = stepToDo[stepToDo.index(" releases ")+len(" releases "):]
+            pid = int(stepToDo[0:stepToDo.index(" releases")].replace("p",""))
+            rid = int(stepToDo[stepToDo.index(" releases ")+len(" releases "):].replace("r",""))
             self.state = self.release(pid, rid, self.state)
 
             return stepToDo
@@ -112,51 +112,49 @@ class deadlock(object):
         newStruct = currentStruct
         alreadyOwnedByAnother = False
         for process in newStruct:
-            if rid in newStruct[process]["owned"] and pid != process:
+            if self.rescMap[rid] in newStruct[process]["owned"] and pid != process:
                 # is the rid already owned, not by me
                 # add rid to pids request edge
-                newStruct[pid]["requested"].append(rid) #mark that we want it
-                newStruct[process]["blocked"].append((pid, rid))
+                newStruct[pid]["requested"].append(self.rescMap[rid]) #mark that we want it
+                newStruct[process]["blocking"].append((pid, self.rescMap[rid]))
+                newStruct[pid]["waitingFor"].append(process)
                 alreadyOwnedByAnother = True
 
         if alreadyOwnedByAnother == False :
             # the resource is NOT owned by another process sp we can own it
-            newStruct[pid]["owned"].append(rid)
+            newStruct[pid]["owned"].append(self.rescMap[rid])
 
         return newStruct
 
     def release(self, pid, rid, currentStruct):
         newStruct = currentStruct
-        if rid in newStruct[pid]["owned"]:
+        if self.rescMap[rid] in newStruct[pid]["owned"]:
             # we own the process we want to release
             # check if any one was blokced on that who now gets to own that resource and if any other processes allso requested it after that then they are now blokced by who now owns it
-            newStruct[pid]["owned"].remove(rid) # i dont own it anymore
+            newStruct[pid]["owned"].remove(self.rescMap[rid]) # i dont own it anymore
             reqFirst = False
-            for tuple in newStruct[pid]["blocked"]:
-                if tuple[1] == rid and reqFirst == False:
+            for tuple in newStruct[pid]["blocking"]:
+                if tuple[1] == self.rescMap[rid] and reqFirst == False:
                     newStruct = self.request(tuple[0], rid, newStruct)
-                    newStruct[pid]["blocked"].remove(tuple)
-
+                    newStruct[pid]["blocking"].remove(tuple)
+                    newStruct[tuple[0]]["waitingFor"].remove(pid)
+                    newStruct[tuple[0]]["requested"].remove(self.rescMap[rid])
                     reqFirst = True
-                elif tuple[1] == rid:
+                elif tuple[1] == self.rescMap[rid]:
                     # the previous process was blocking more than one process on this resources
                     # so the new process who owns the resource will need to track blocking those
-                    newStruct[tuple[0]]["blocked"].append(tuple)
-                    newStruct[pid]["blocked"].remove(tuple)
-
+                    newStruct[tuple[0]]["blocking"].append(tuple)
+                    newStruct[pid]["blocking"].remove(tuple)
         return newStruct
 
-    def undo(self):
-        print("UNDO")
-
-    def readInputFile(self):
+    def readInputFile(self, file):
         ''' read the input file and place it into a list
             read resource number from that list
             read process number form that list
             return list, resource number, and process number
         '''
         # get list of steps
-        with open("input3a.data") as f:
+        with open(file) as f:
             content = f.readlines()
             # you may also want to remove whitespace characters like `\n` at the end of each line
             content = [x.strip() for x in content]
