@@ -98,7 +98,7 @@ def textGen(step, count, steps, dl, dead, waitEdges):
         if dead is True and len(steps) > 0:
             # we are deadlocked and its not the end of the system yet
             text = "Step "+str(count)+": '"+step+"'."\
-            " In this step we see that we are in a dead lock state along these directed edges: "+str(waitEdges)+"."
+            " In this step we see that we are in a dead lock state along these directed edges: "+str(waitEdges)+". Where (x,y) x -> y"
 
         elif dead is True and len(steps) == 0:
             # we are in a state of deadlock and it is the last step
