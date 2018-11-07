@@ -119,8 +119,11 @@ class deadlock(object):
         '''
         We are requesting a process
         '''
-        #check if another process owns this resource
         newStruct = currentStruct
+        #check if I am already blocked, If I am then I cant request anythogn release
+        if len(newStruct[pid]["requested"]) == 1:
+            return newStruct
+        #check if another process owns this resource
         alreadyOwnedByAnother = False
         for process in newStruct:
             if self.rescMap[rid] in newStruct[process]["owned"] and pid != process:
@@ -154,13 +157,13 @@ class deadlock(object):
             reqFirst = False
             for tuple in newStruct[pid]["blocking"]:
                 if tuple[1] == self.rescMap[rid] and reqFirst == False:
-                    # the process who requested what we owned first gets to request it again
-                    newStruct = self.request(tuple[0], rid, newStruct)
                     # we are no longer blocking them
                     newStruct[pid]["blocking"].remove(tuple)
                     # they are no longer blocked by a process
                     newStruct[tuple[0]]["waitingFor"].remove(pid)
                     newStruct[tuple[0]]["requested"].remove(self.rescMap[rid])
+                    # the process who requested what we owned first gets to request it again
+                    newStruct = self.request(tuple[0], rid, newStruct)
                     reqFirst = True
                 elif tuple[1] == self.rescMap[rid]:
                     # the previous process was blocking more than one process on this resources
