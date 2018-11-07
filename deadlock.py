@@ -10,6 +10,7 @@ class deadlock(object):
         '''
         sets up the initial state of the deadlock tutorial
         '''
+        self.prevState = {}
         self.numProcs, self.numResc, self.steps = self.readInputFile(file)
         self.state = self.makeStruct(self.numProcs)
         self.procList = [(lambda x: x)(x) for x in range(0,self.numProcs)]
@@ -49,6 +50,8 @@ class deadlock(object):
         return self.steps
     def getState(self):
         return self.state
+    def getPrevState(self):
+        return self.prevState
 
     def textForStep(self, numProcs, numResc, step ):
         initial = "There are " + str(numProcs) + " processes and "+numResc+" resources in this system"\
@@ -83,6 +86,7 @@ class deadlock(object):
             3. end/nothing left
             4. deadlock check
         '''
+        self.prevState = self.state
         if (len(self.steps) > 0):
             stepToDo =  self.steps[0]
             self.steps.pop(0)

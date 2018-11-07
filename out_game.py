@@ -1,9 +1,12 @@
-import pygame, os
+import pygame, os, generator, sys
 from pygame.locals import *
 
 def main():
-    # initialize
+    stateFile = sys.argv[1]
+    
     data = {}
+    data = loader(data, stateFile[:stateFile.index(".data")])
+
     white = (255, 255, 255)
     black = (0,0,0)
     i = pygame.init()
@@ -18,7 +21,7 @@ def main():
     # change game name
     pygame.display.set_caption("Our Game")
     game_display.fill(white)
-    data = loader(data)
+
     # display the console
     step = 0
     while True:
@@ -54,22 +57,22 @@ def blit_text(surface, text, pos, font, color):
         x = pos[0]  # Reset the x.
         y += word_height  # Start on new row.
 
-def loader(data):
-    images_to_read = os.listdir("input/images")
-    text_to_read = os.listdir("input/text")
+def loader(data, stateFile):
+    images_to_read = os.listdir(stateFile+"/images")
+    text_to_read = os.listdir(stateFile+"/text")
 
     for file in range(0,len(images_to_read)):
         data[file]=[]
 
         for name in images_to_read:
             if int(name[:name.index(".")]) == file:
-                imageInfo = "input/images/"+ name
+                imageInfo = stateFile+"/images/"+ name
                 image = pygame.image.load(imageInfo)
                 data[file].append(image)
 
         for name in text_to_read:
             if int(name[:name.index(".")]) == file:
-                text = "input/text/"+name
+                text = stateFile+"/text/"+name
                 data[file].append(readText(text))
 
     return data

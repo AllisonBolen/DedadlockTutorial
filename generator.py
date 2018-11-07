@@ -21,22 +21,26 @@ def main():
     # text bools
     dead = False
     stepText = ""
+    edges = []
     while(step != "END GAME"):
+        prevEdges = edges
+
         edges = convertStateToEdges(dl.getState(),resources, processes)
         dead, waitEdges = deadCheck(dl, processes)
-        graph = run(names, processes, resources, labels, edges)
+        graph = run(names, processes, resources, labels, edges, prevEdges)
         stepText = textGen(step, count, steps, dl, stepText, dead, waitEdges)
         # plt.text(5,5,stepText)
+        print(step)
+        print(dl.getState())
+        print()
         plt.axis('off')
         # plt.pause(1)
-        # plt.draw()
+        #plt.draw()
 
         saveFile(sys.argv[1], step, count, stepText)
+        plt.clf()
         stepText = ""
-        print(count)
-        print(step)
-        print(len(steps))
-        print()
+
         step = dl.nextStep()
         count = count + 1
 
@@ -120,7 +124,11 @@ def createLabels(names, processes, resources):
         info[item]= names[item]
     return info
 
-def run(names, processes, resources, labels, edges):
+def run(names, processes, resources, labels, edges, prevEdges):
+
+    print("OLDEDGES"+str(prevEdges))
+    print("NOWEDGES:"+str(edges))
+
 
     B = nx.DiGraph()
     B.add_nodes_from(processes+resources)
@@ -139,8 +147,14 @@ def run(names, processes, resources, labels, edges):
             pos[node]=(countR*10,80)
             countR = countR + 1
 
-
-
+    # for oldEdge in prevEdges:
+    #     found = False
+    #     for edge in edges:
+    #         if found is False and edge == oldEdge:
+    #             found = True
+    #     if found is False:
+    #         # we did not see the old edge in the new edges so we need to remove it from the DiGraph
+    #         B.remove_edge(oldEdge)
 
     nx.draw_networkx_nodes(B, pos,
                                nodelist=processes,
@@ -171,7 +185,9 @@ def convertStateToEdges(state, resources, processes):
     '''
     create directed edge lists out of teh state of the machine
     '''
+
     edgeList = []
+
     for process in state:
         if len(state[process]["owned"]) > -1:
             # we own something so teh dir should go from resourc to processes
@@ -184,6 +200,7 @@ def convertStateToEdges(state, resources, processes):
                 if (resource, process) not in edgeList:
                     edgeList.append((process, resource))
 
+    print(edgeList)
     return edgeList
 
 if __name__ == "__main__": main()

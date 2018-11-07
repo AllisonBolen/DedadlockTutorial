@@ -1,2 +1,1 @@
-This is step 7: 'p3 requests r3'.
-In this step we see that we are in a dead lock state along these directed edges: [(0, 1), (1, 0), (3, 4)].
+This is step 7: 'p1 releases r4'.
