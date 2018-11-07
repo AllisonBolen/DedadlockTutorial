@@ -1,2 +1,0 @@
-This is step 3: 'p0 releases r1'.
-This is the last step.

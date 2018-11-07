@@ -1,1 +1,0 @@
-This is step 8: 'p0 releases r0'.
