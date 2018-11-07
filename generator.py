@@ -28,12 +28,17 @@ def main():
 
     edges = []
     while(step != "END GAME"):
+        prevEdges = edges
         # get the new edges
         edges = convertStateToEdges(dl.getState(),resources, processes)
         # are we in a state of deadlock based on the new edges
         dead, waitEdges = deadCheck(dl, processes)
         # generate text description of the graph
-        stepText = textGen(step, stepCount, steps, dl, dead, waitEdges)
+        print()
+        print(step)
+        print(prevEdges)
+        print(edges)
+        stepText = textGen(step, stepCount, steps, dl, dead, waitEdges, set(prevEdges)==set(edges))
         # create the graph given the new state of the game
         graph = run(names, processes, resources, labels, edges)
         plt.axis('off')
@@ -81,13 +86,14 @@ def deadCheck(dl, processes):
         pass
     return False, waitEdgeList
 
-def textGen(step, count, steps, dl, dead, waitEdges):
+def textGen(step, count, steps, dl, dead, waitEdges, stateChange):
     '''
     Generates text description for each state of the game.
     '''
+    print(stateChange)
     text = ""
     if step == "Initial" :
-        text = "This is a graph with "+str(dl.getNumProcs())+" processes and "+str(dl.getNumResc())+"resources."\
+        text = "This is a graph with "+str(dl.getNumProcs())+" processes and "+str(dl.getNumResc())+" resources."\
         " This is a graphical simulation of resource allocation."\
         " Our system holds for mutual exclusion: no two processes can own the same resource at the same time,"\
         " hold and wait: a process must be holding at least one resouce and be waiting to aquire resources that are owned by another process, no preemption: process can not steal resources from "\
@@ -95,24 +101,20 @@ def textGen(step, count, steps, dl, dead, waitEdges):
         " Use the left and right arrows to navigate between steps of the simulation."
     else:
 
-        if dead is True and len(steps) > 0:
-            # we are deadlocked and its not the end of the system yet
-            text = "Step "+str(count)+": '"+step+"'."\
-            " In this step we see that we are in a dead lock state along these directed edges: "+str(waitEdges)+". Where (x,y) x -> y"
+        if len(steps) >= 0:
+            text = "Step "+str(count)+": '"+step+"'."
 
-        elif dead is True and len(steps) == 0:
-            # we are in a state of deadlock and it is the last step
-            text = "Step "+str(count)+": '"+step+"'."\
-            " In this step we see that we are in a dead lock state along these directed edges: "+str(waitEdges)+"."\
-            " Where (x,y) x -> y. This is the last step and we are ending in a deadlocked state."
-        elif dead is False and len(steps) > 0:
-            # we are not deadlocked but we not at the end of the GAME
-            text = " Step "+str(count)+": '"+step+"'."\
+        if len(steps) == 0:
+            text = text + " This is the last step."
 
-        elif dead is False and len(steps) == 0:
-            # we are not dead and we END
-            text = "Step "+str(count)+": '"+step+"'."\
-            " This is the last step."
+        if dead is True:
+            # we are deadlocked
+            text = text + " In this step we see that we are in a dead lock state along these directed edges: "+str(waitEdges)+". Where (x,y) x -> y."
+
+        if stateChange is True:
+            # we are the same as last step so that means we resuwsted soemthing when we cant get it.
+            text  = text + " The state has not changed because of the hold and wait condition of this system"\
+            " So '" + step[:step.index(" re")] + "' has already requested something in a previous step and thus can not do anything else while it is waiting."
 
     return text
 

@@ -1,1 +1,0 @@
-Step 7: 'p2 releases r0'. This is the last step.
