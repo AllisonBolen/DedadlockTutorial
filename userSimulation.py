@@ -1,14 +1,22 @@
-import pygame, os
+import pygame, os, generator, sys, shutil
 from pygame.locals import *
 
 def main():
-    # initialize
+    '''
+    This is the gui file for the deadlock graphs
+    '''
+    stateFile = sys.argv[1]
+    directory = stateFile[:stateFile.index(".")]+"/"
+    # set up the data structure
+    # a dict<step#, list<image,text>>
     data = {}
+    data = loader(data, stateFile[:stateFile.index(".data")])
+
     white = (255, 255, 255)
     black = (0,0,0)
+
     i = pygame.init()
-    print(i)
-    # font?
+    # font
     pygame.font.init()
     myfont = pygame.font.SysFont('verdana', 20)
     # set up display
@@ -18,26 +26,30 @@ def main():
     # change game name
     pygame.display.set_caption("Our Game")
     game_display.fill(white)
-    data = loader(data)
-    # display the console
+
     step = 0
     while True:
-        step = step + eventHandler()
-
+        # catch user events and update the step
+        # counter to present the right step
+        step = step + eventHandler(directory)
         if step > -1 and step < len(data):
             game_display.blit(data[step][0],(300,300))
-            #surface = myfont.render(data[step][1], True, black)
-            #game_display.blit(surface,(0,1))
             blit_text(game_display, data[step][1], (20, 20), myfont, black)
         if step < 0:
+            # bounds guard
             step = 0
         if step >= len(data):
+            # bounds guard
             step = len(data) - 1
 
         pygame.display.update()
+        # "erase" the text from the window
         blit_text(game_display, data[step][1], (20, 20), myfont, white)
 
 def blit_text(surface, text, pos, font, color):
+    '''
+    Organize text in the window
+    '''
     words = [word.split(' ') for word in text.splitlines()]  # 2D array where each row is a list of words.
     space = font.size(' ')[0]  # The width of a space.
     max_width, max_height = surface.get_size()
@@ -54,50 +66,65 @@ def blit_text(surface, text, pos, font, color):
         x = pos[0]  # Reset the x.
         y += word_height  # Start on new row.
 
-def loader(data):
-    images_to_read = os.listdir("input/images")
-    text_to_read = os.listdir("input/text")
+def loader(data, stateFile):
+    '''
+    Loads the files for the gui to present
+    '''
+    images_to_read = os.listdir(stateFile+"/images")
+    text_to_read = os.listdir(stateFile+"/text")
 
     for file in range(0,len(images_to_read)):
         data[file]=[]
 
         for name in images_to_read:
             if int(name[:name.index(".")]) == file:
-                imageInfo = "input/images/"+ name
+                # add the image to the dict to load
+                imageInfo = stateFile+"/images/"+ name
                 image = pygame.image.load(imageInfo)
                 data[file].append(image)
 
         for name in text_to_read:
             if int(name[:name.index(".")]) == file:
-                text = "input/text/"+name
+                # add text to the step in the dict to load
+                text = stateFile+"/text/"+name
                 data[file].append(readText(text))
 
     return data
 
-def textArray():
-    print("here")
+def cleanUp(dir):
+    if os.path.isdir(dir) is True:
+        shutil.rmtree(dir)
 
 def readText(file):
+    '''
+    Read the text from the file to be presented on screen
+    '''
     with open(file) as f:
         content = f.readlines()
         # you may also want to remove whitespace characters like `\n` at the end of each line
         content = [x.strip() for x in content]
         content = " ".join(str(x) for x in content)
-    print(content)
+
     return content
 
-def eventHandler():
-    # loop to keep the window open and to get eevents from user
+def eventHandler(directory):
+    '''
+    Detect events from the user
+    '''
+    # loop to keep the window open and to get events from user
     for event in pygame.event.get():
-        # print(event)
         if event.type == QUIT or (event.type == KEYDOWN and (event.key == K_ESCAPE or event.key == K_q)):
+            cleanUp(directory)
             pygame.quit()
             quit()
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
+                # go to the previous step
                 return -1
             if event.key == pygame.K_RIGHT:
+                # go to the next step
                 return 1
     return 0
+
 if __name__ == "__main__": main()

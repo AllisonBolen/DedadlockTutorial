@@ -1,2 +1,0 @@
-This is step 4: 'p0 requests r0'.
-In this step we see that we are in a dead lock state along these directed edges: [(0, 1), (1, 0)].

@@ -1,0 +1,5 @@
+1 processes
+2 resources
+p0 requests r1
+p0 requests r0
+p0 releases r1
