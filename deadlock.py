@@ -119,8 +119,11 @@ class deadlock(object):
         '''
         We are requesting a process
         '''
-        #check if another process owns this resource
         newStruct = currentStruct
+        #check if I am already blocked, If I am then I cant request anythogn release
+        if len(newStruct[pid]["requested"]) == 1:
+            return newStruct
+        #check if another process owns this resource
         alreadyOwnedByAnother = False
         for process in newStruct:
             if self.rescMap[rid] in newStruct[process]["owned"] and pid != process:
