@@ -1,0 +1,9 @@
+3 processes
+3 resources
+p0 requests r1
+p1 requests r2
+p2 requests r0
+p0 requests r0
+p1 requests r1
+p2 requests r2
+p2 releases r0

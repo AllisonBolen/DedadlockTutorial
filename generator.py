@@ -3,10 +3,6 @@ import matplotlib as mpl
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 import networkx as nx
-import pylab
-pylab.ion
-import time
-
 import sys, os, shutil
 
 
@@ -14,7 +10,7 @@ def main():
     setup(sys.argv[1])
     dl = deadlock.deadlock(str(sys.argv[1]))
     steps = dl.getSteps()
-
+    fig = plt.figure()
     names = dl.makeProcsLables() + dl.makeRescLables()
     processes = dl.getListProcs()
     resources = dl.getListResc()
@@ -29,10 +25,12 @@ def main():
         edges = convertStateToEdges(dl.getState(),resources, processes)
         dead, waitEdges = deadCheck(dl, processes)
         graph = run(names, processes, resources, labels, edges)
+        stepText = textGen(step, count, steps, dl, stepText, dead, waitEdges)
+        # plt.text(5,5,stepText)
         plt.axis('off')
         # plt.pause(1)
         # plt.draw()
-        stepText = textGen(step, count, steps, dl, stepText, dead, waitEdges)
+
         saveFile(sys.argv[1], step, count, stepText)
         stepText = ""
         print(count)
@@ -42,6 +40,7 @@ def main():
         step = dl.nextStep()
         count = count + 1
 
+    return
 
 def deadCheck(dl, processes):
     state = dl.getState()
@@ -63,7 +62,7 @@ def deadCheck(dl, processes):
         pass
     return False, waitEdgeList
 
-def textGen(step, count, steps, dl, stepText, dead, waitEdges):
+def textGen( step, count, steps, dl, stepText, dead, waitEdges):
     text = ""
     if step == "Initial" :
         text = "This is a graph with "+str(dl.getNumProcs())+" processes and "+str(dl.getNumResc())+"resources."\
@@ -92,6 +91,7 @@ def textGen(step, count, steps, dl, stepText, dead, waitEdges):
             # we are not dead and we are not the END
             text = "This is step "+str(count)+": '"+step+"'."\
             "\nThis is the last step."
+
     return text
 
 def setup(asocFile):
@@ -132,7 +132,7 @@ def run(names, processes, resources, labels, edges):
     for node in processes+resources:
         if node in processes:
             B.node[node]['pos'] = (countP*10,10)
-            pos[node]=(countP*10,10)
+            pos[node]=(countP*10,20)
             countP = countP + 1
         if node in resources:
             B.node[node]['pos'] = (countR*10,80)
@@ -144,21 +144,22 @@ def run(names, processes, resources, labels, edges):
 
     nx.draw_networkx_nodes(B, pos,
                                nodelist=processes,
-                               node_color='r',
-                               node_size=500,
+                               node_color='g',
+                               node_size=600,
                                alpha=0.8,
                                label="Processes")
 
     nx.draw_networkx_nodes(B, pos,
                                nodelist=resources,
-                               node_color='b',
-                               node_size=500,
+                               node_color='y',
+                               node_size=600,
+                               node_shape='s',
                                alpha=0.8,
                                label="Resources")
 
     nx.draw_networkx_edges(B, pos,
                                edgelist=edges,
-                               width=1, alpha=1, arrows=True, arrowstyle='->', arrowsize=20)
+                               width=2, alpha=1, arrows=True, arrowstyle='->', arrowsize=20)
 
 
     nx.draw_networkx_labels(B, pos, labels, font_size=16)
