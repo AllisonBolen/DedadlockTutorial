@@ -48,6 +48,7 @@ def main():
 
 def blit_text(surface, text, pos, font, color):
     '''
+    https://stackoverflow.com/questions/42014195/rendering-text-with-multiple-lines-in-pygame
     Organize text in the window
     '''
     words = [word.split(' ') for word in text.splitlines()]  # 2D array where each row is a list of words.
